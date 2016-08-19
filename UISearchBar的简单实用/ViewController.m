@@ -10,13 +10,29 @@
 
 @interface ViewController ()<UISearchBarDelegate,UITableViewDelegate,UITableViewDataSource>
 
+/**
+ *  tableView
+ */
 @property (nonatomic,strong) UITableView *tableView;
+/**
+ *  searchBar
+ */
 @property (nonatomic,strong) UISearchBar *searchBar;
-
+/**
+ *  所有搜索数据
+ */
 @property (nonatomic,strong) NSMutableArray *sectionArray;
+/**
+ *  历史记录数据源数组
+ */
 @property (nonatomic,strong) NSMutableArray *historyArray;
+/**
+ *  热门搜索数据源数组
+ */
 @property (nonatomic,strong) NSArray *hotArray;
-
+/**
+ *  记录tableView的contentOffSet.point.y
+ */
 @property (nonatomic,assign) CGFloat lastY;
 
 
@@ -26,25 +42,40 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
+    
     self.view.backgroundColor = [UIColor grayColor];
     
-    UISearchBar *searchBar = [[UISearchBar alloc] init];
-    searchBar.delegate = self;
-    
-    searchBar.placeholder = @"热门搜索:王宝强";
-    
-    self.navigationItem.titleView = searchBar;
-    
-
-    self.searchBar = searchBar;
+    [self setupSearchBar];
     
     [self setupTableView];
 }
 
-- (BOOL)searchBarShouldBeginEditing:(UISearchBar *)searchBar {
+#pragma mark - 创建UISearchBar
+- (void)setupSearchBar {
     
-//    [self setupTableView];
+    UISearchBar *searchBar = [[UISearchBar alloc] init];
+    searchBar.delegate = self;
+    searchBar.placeholder = @"热门搜索:王宝强";
+    self.navigationItem.titleView = searchBar;
+    self.searchBar = searchBar;
+}
+
+#pragma mark - 创建UITableView
+- (void)setupTableView {
+    
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 375, 500) style:UITableViewStyleGrouped];
+    [self.view addSubview:self.tableView];
+    
+    self.tableView.tableHeaderView.backgroundColor = [UIColor redColor];
+    
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    self.tableView.alpha = 0;
+    
+}
+
+#pragma mark - UISearchBar代理方法
+- (BOOL)searchBarShouldBeginEditing:(UISearchBar *)searchBar {
     
     [UIView animateWithDuration:1.0 animations:^{
        
@@ -53,6 +84,8 @@
     
     self.searchBar.placeholder = @"你想找点什么?";
     searchBar.showsCancelButton = YES;
+    
+    //遍历UISearchBar的子控件,拿到cancel按钮,修改成中文
     for(UIView *view in  [[[searchBar subviews] objectAtIndex:0] subviews]) {
         if([view isKindOfClass:[NSClassFromString(@"UINavigationButton") class]]) {
             UIButton * cancel =(UIButton *)view;
@@ -63,11 +96,10 @@
 
     }
     
-//    NSLog(@"%@",self.historyArray);
-    
     return YES;
 }
 
+#pragma mark - 键盘上Serach按钮的点击方法
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
     
     [self.historyArray enumerateObjectsUsingBlock:^(NSString *obj, NSUInteger idx, BOOL * _Nonnull stop) {
@@ -82,71 +114,40 @@
 }
 
 
-//取消按钮点击方法
+#pragma mark - 取消按钮点击方法
 - (void)cancelBtnClick {
+    
     [UIView animateWithDuration:1.0 animations:^{
         
                 self.tableView.alpha = 0;
     }];
+    
     [self.searchBar resignFirstResponder];
     self.searchBar.showsCancelButton = NO;
     self.searchBar.text = @"";
     self.searchBar.placeholder = @"热门搜索:王宝强";
 }
 
-- (void)setupTableView {
-    
-    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 375, 500) style:UITableViewStyleGrouped];
-    [self.view addSubview:self.tableView];
-    
-//    self.tableView.separatorInset = UIEdgeInsetsMake(0, 0, 0, 0);
-    
-    self.tableView.tableHeaderView.backgroundColor = [UIColor redColor];
-    
-//    self.tableView.backgroundColor = [UIColor redColor];
-    
-    self.tableView.delegate = self;
-    self.tableView.dataSource = self;
-    self.tableView.alpha = 0;
 
-}
-
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    
-    return self.sectionArray.count;
-}
-
+#pragma mark - 自定义页眉
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 375, 28)];
     
-
+    
     if (section == 0) {
         label.text = @"     历史搜索";
     }else {
         label.text = @"     热门搜索";
     }
-
+    
     label.backgroundColor = [UIColor lightGrayColor];
     label.font = [UIFont systemFontOfSize:12];
     return label;
 }
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    NSMutableArray *array = self.sectionArray[section];
-    return array.count;
-}
-
--(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [[UITableViewCell alloc] init];
-    NSArray *array = self.sectionArray[indexPath.section];
-    cell.textLabel.text = array[indexPath.row];
-//    cell.separatorInset = UIEdgeInsetsZero;
-    return cell;
-}
-
--(void)viewDidLayoutSubviews
-{
+#pragma mark - 下面两个方法是,修改tableViewCell的分割线,让其顶着左边
+-(void)viewDidLayoutSubviews {
     if ([self.tableView respondsToSelector:@selector(setSeparatorInset:)]) {
         [self.tableView setSeparatorInset:UIEdgeInsetsMake(0,0,0,0)];
     }
@@ -157,8 +158,7 @@
     
 }
 
--(void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
-{
+-(void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
     if ([cell respondsToSelector:@selector(setSeparatorInset:)]) {
         [cell setSeparatorInset:UIEdgeInsetsZero];
     }
@@ -168,6 +168,28 @@
     }
 }
 
+
+#pragma mark - UITableView的数据源方法
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    
+    return self.sectionArray.count;
+}
+
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    NSMutableArray *array = self.sectionArray[section];
+    return array.count;
+}
+
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell *cell = [[UITableViewCell alloc] init];
+    NSArray *array = self.sectionArray[indexPath.section];
+    cell.textLabel.text = array[indexPath.row];
+    return cell;
+}
+
+
+#pragma mark - UITableView的代理方法
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     
 
@@ -177,6 +199,8 @@
     self.searchBar.text = array[indexPath.row];
 }
 
+
+#pragma mark - UITableView 设置其分组的页眉页脚高度
 //- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
 //    
 //    return 0;
@@ -186,6 +210,8 @@
     return 28;
 }
 
+#pragma mark - tableView 滚动时会一直调用此方法 
+//判断tableView滚动方向,来弹出或者缩回键盘
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     CGPoint point = scrollView.contentOffset;
     NSLog(@"%@",NSStringFromCGPoint(point));
@@ -208,6 +234,7 @@
 }
 
 
+#pragma mark - 懒加载
 - (NSMutableArray *)sectionArray {
     
     if (_sectionArray == nil) {
